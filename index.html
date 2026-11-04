@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3fc">
+  <title>Classmark — Attendance tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #24231f;
+      background:
+        radial-gradient(ellipse at 8% 2%, #e8f4ff 0, transparent 26rem),
+        radial-gradient(ellipse at 94% 19%, #fff0e4 0, transparent 24rem),
+        #f7f6fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #85837e;
+      --line: #e9e7e1;
+      --purple: #6b58c7;
+      --purple-light: #f0edfc;
+      --green: #39836a;
+      --green-light: #edf7f2;
+      --red: #bd6458;
+      --red-light: #fbf0ee;
+      --blue: #4386bf;
+      --orange: #c97b37;
+    }
+
+    * { box-sizing: border-box; }
+    body { min-width: 320px; margin: 0; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .page { width: min(100% - 40px, 1040px); margin: 0 auto; }
+    :focus-visible { outline: 3px solid #aa9de9; outline-offset: 3px; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px;
+      margin-top: 16px;
+      background: #ffffffc7;
+      border: 1px solid #ffffff;
+      border-radius: 17px;
+      box-shadow: 0 5px 20px #39335d08;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 15px; font-weight: 720; letter-spacing: -.3px; }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      color: white;
+      background: linear-gradient(145deg, #826ce0, #5545b6);
+      border-radius: 12px;
+      font-size: 17px;
+      box-shadow: 0 5px 12px #6956c74a;
+    }
+    .local-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .local-dot { width: 7px; height: 7px; background: #60a88a; border-radius: 50%; }
+
+    main { padding: 30px 0 64px; }
+    .intro {
+      position: relative;
+      display: flex;
+      min-height: 205px;
+      align-items: center;
+      overflow: hidden;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 30px 34px;
+      margin-bottom: 21px;
+      color: white;
+      background: linear-gradient(112deg, #5546b3 0%, #735fd0 54%, #a88de2 100%);
+      border: 1px solid #7665ca;
+      border-radius: 23px;
+      box-shadow: 0 14px 28px #5d4db521;
+    }
+    .intro-copy { position: relative; z-index: 1; }
+    .eyebrow { margin: 0 0 12px; color: #ddd5ff; font-size: 10px; font-weight: 750; letter-spacing: 1.7px; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(29px, 5vw, 42px); font-weight: 700; letter-spacing: -1.7px; line-height: 1.12; }
+    .subtitle { margin: 12px 0 0; color: #eeeaff; font-size: 14px; }
+    .hero-art { position: relative; flex: 0 0 172px; height: 145px; }
+    .hero-orbit { position: absolute; top: 50%; left: 50%; width: 140px; height: 140px; border: 1px solid #ffffff55; border-radius: 50%; transform: translate(-50%, -50%); }
+    .hero-orbit::before, .hero-orbit::after { position: absolute; inset: 14px; border: 1px solid #ffffff45; border-radius: 50%; content: ""; }
+    .hero-orbit::after { inset: 31px; border-color: #ffffff38; }
+    .hero-check { position: absolute; top: 50%; left: 50%; display: grid; width: 66px; height: 66px; place-items: center; color: #5a4bbb; background: #fff; border: 7px solid #ffffff40; border-radius: 22px; box-shadow: 0 12px 28px #30245d40; font-size: 31px; font-weight: 800; transform: translate(-50%, -50%) rotate(-7deg); }
+    .hero-spark { position: absolute; color: #ffe4a8; font-size: 24px; }
+    .hero-spark.one { top: 2px; right: 12px; }
+    .hero-spark.two { bottom: 3px; left: 3px; color: #b7eeed; font-size: 18px; }
+
+    .overview {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 13px;
+      margin-bottom: 31px;
+    }
+    .stat { position: relative; min-height: 119px; padding: 20px 22px; overflow: hidden; background: white; border: 1px solid #ebe8f1; border-radius: 17px; box-shadow: 0 5px 16px #39335d08; }
+    .stat::after { position: absolute; right: -17px; bottom: -34px; width: 105px; height: 105px; background: var(--stat-blob, #f0edfc); border-radius: 50%; content: ""; }
+    .stat:first-child { color: white; background: linear-gradient(135deg, #5546b3, #806bd9); border-color: transparent; }
+    .stat:first-child::after { background: #ffffff18; }
+    .stat:nth-child(2) { --stat-blob: #e5f5ee; }
+    .stat:nth-child(3) { --stat-blob: #fff0df; }
+    .stat-label, .stat-value, .stat-hint { position: relative; z-index: 1; }
+    .stat-label { color: var(--muted); font-size: 12px; font-weight: 550; }
+    .stat:first-child .stat-label, .stat:first-child .stat-hint { color: #e7e1ff; }
+    .stat-value { display: block; margin-top: 9px; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+    .stat-value small { color: var(--muted); font-size: 13px; font-weight: 450; letter-spacing: 0; }
+    .stat:first-child .stat-value { color: white; }
+    .stat-hint { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 32px 0 15px; }
+    h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+    .section-note { color: var(--muted); font-size: 12px; }
+    .subject-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .subject-card {
+      padding: 19px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 5px 16px #39335d09;
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .subject-card::before { display: block; width: 34px; height: 4px; margin: -19px 0 16px; background: var(--subject-accent, #806bd9); border-radius: 0 0 5px 5px; content: ""; }
+    .subject-card.palette-1 { --subject-accent: #45a98c; --subject-soft: #e9f7f2; }
+    .subject-card.palette-2 { --subject-accent: #e19a52; --subject-soft: #fff3e7; }
+    .subject-card.palette-3 { --subject-accent: #5a9bd0; --subject-soft: #eaf4fb; }
+    .subject-card.palette-4 { --subject-accent: #dc7693; --subject-soft: #fcedf2; }
+    .subject-card.palette-5 { --subject-accent: #8d78ce; --subject-soft: #f0edfc; }
+    .subject-card.palette-0 { --subject-accent: #d5b44f; --subject-soft: #fbf6df; }
+    .subject-card:hover { transform: translateY(-2px); border-color: var(--subject-accent); box-shadow: 0 9px 22px #39335d14; }
+    .subject-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .subject-name { overflow-wrap: anywhere; margin: 1px 0 5px; font-size: 14px; font-weight: 650; }
+    .subject-count { margin: 0; color: var(--muted); font-size: 12px; }
+    .subject-percent { flex: 0 0 auto; color: var(--subject-accent, var(--purple)); font-size: 22px; font-weight: 750; letter-spacing: -.6px; }
+    .subject-percent.unstarted { color: #aaa8a1; }
+    .status-pill { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .status-pill.on-track { color: #247658; background: var(--green-light); }
+    .status-pill.below-target { color: #a64e43; background: var(--red-light); }
+    .status-pill.not-started { color: #77756e; background: #f1f0ec; }
+    .progress { height: 5px; overflow: hidden; margin: 17px 0 12px; background: #eeede9; border-radius: 99px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--subject-accent, var(--purple)), color-mix(in srgb, var(--subject-accent, var(--purple)) 66%, white)); border-radius: inherit; transition: width .35s ease; }
+    .progress-fill.below-target { background: linear-gradient(90deg, #d48678, #e6ad82); }
+    .subject-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .guidance { margin: 0; color: #67655f; font-size: 11px; line-height: 1.5; }
+    .icon-button {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .icon-button:hover { color: var(--red); background: #fbf1ef; }
+
+    .panel {
+      padding: 21px;
+      background: #fff;
+      border: 1px solid #ebe8f1;
+      border-radius: 16px;
+      box-shadow: 0 5px 16px #39335d08;
+    }
+    .forms-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 13px; }
+    .record-panel { grid-column: 1 / -1; }
+    .form-panel h2 { margin-bottom: 17px; }
+    .form-row { display: flex; align-items: end; gap: 10px; }
+    .field { display: grid; min-width: 0; flex: 1 1 0; gap: 7px; }
+    .field label { color: #66645f; font-size: 11px; font-weight: 600; }
+    input, select {
+      width: 100%;
+      min-width: 0;
+      height: 39px;
+      padding: 0 10px;
+      color: #302f2b;
+      background: white;
+      border: 1px solid #e5e3dd;
+      border-radius: 8px;
+      outline: none;
+      font-size: 12px;
+    }
+    input:focus, select:focus { border-color: #9b8ddd; box-shadow: 0 0 0 3px #f0edfc; }
+    .primary-button {
+      min-height: 39px;
+      padding: 0 13px;
+      color: white;
+      background: linear-gradient(135deg, #7662d1, #5947b5);
+      border: 1px solid #6956c4;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .primary-button:hover { background: linear-gradient(135deg, #6653c2, #4939a3); box-shadow: 0 4px 11px #6956c744; transform: translateY(-1px); }
+    .primary-button:disabled { cursor: not-allowed; opacity: .48; }
+
+    .history-panel { padding: 0; overflow: hidden; }
+    .history-panel th { background: #f7f5fc; }
+    .history-panel tbody tr:hover { background: #fbfaff; }
+    .history-header { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 11px 20px; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .45px; text-transform: uppercase; }
+    td { padding: 12px 20px; border-top: 1px solid #f0efeb; font-size: 12px; }
+    .result { display: inline-flex; align-items: center; gap: 6px; }
+    .result::before { width: 6px; height: 6px; background: var(--green); border-radius: 50%; content: ""; }
+    .result.absent { color: var(--red); }
+    .result.absent::before { background: var(--red); }
+    .delete-record { padding: 4px 7px; color: #898781; background: transparent; border: 0; border-radius: 5px; }
+    .delete-record:hover { color: var(--red); background: #fbf1ef; }
+    .empty { grid-column: 1 / -1; padding: 27px 18px; color: var(--muted); text-align: center; font-size: 12px; }
+    .welcome-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 19px 21px; margin-bottom: 13px; background: linear-gradient(110deg, #f0edfc, #faf9ff 60%, #eef8f7); border: 1px solid #e6e1f8; border-radius: 15px; box-shadow: 0 5px 15px #39335d08; }
+    .welcome-card[hidden] { display: none; }
+    .welcome-copy strong { display: block; margin-bottom: 5px; font-size: 13px; }
+    .welcome-copy p { margin: 0; color: #77738a; font-size: 12px; line-height: 1.6; }
+    .quiet-button { min-height: 36px; padding: 0 12px; color: var(--purple); background: white; border: 1px solid #ddd7f2; border-radius: 8px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .quiet-button:hover { background: #f9f8ff; }
+    .table-empty { padding: 25px; color: var(--muted); text-align: center; font-size: 12px; }
+    .toast { min-height: 20px; margin: 12px 0 0; color: var(--green); font-size: 12px; }
+    .toast.error { color: var(--red); }
+    .form-help { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .history-tools { display: flex; align-items: center; gap: 8px; }
+    .history-tools select { width: auto; min-width: 145px; }
+    .export-button { min-height: 35px; padding: 0 11px; color: #5d4cb1; background: white; border: 1px solid #ddd7f2; border-radius: 8px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .export-button:hover { background: #f8f6ff; }
+    footer { padding-top: 20px; color: var(--muted); text-align: center; font-size: 11px; }
+
+    @media (max-width: 650px) {
+      .page { width: min(100% - 28px, 480px); }
+      .topbar { padding: 16px; }
+      main { padding-top: 23px; }
+      .intro { min-height: 180px; padding: 25px 22px; border-radius: 19px; }
+      .hero-art { flex-basis: 110px; height: 110px; margin-right: -12px; }
+      .hero-orbit { width: 105px; height: 105px; }
+      .hero-check { width: 54px; height: 54px; border-radius: 18px; font-size: 25px; }
+      .hero-spark.one { right: 0; }
+      .overview { gap: 9px; }
+      .overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat { min-height: 96px; padding: 15px; border-radius: 14px; }
+      .stat:first-child { grid-column: 1 / -1; }
+      .stat-value { font-size: 25px; }
+      .subject-grid, .forms-grid { grid-template-columns: 1fr; }
+      .welcome-card { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .history-tools { align-items: stretch; flex-wrap: wrap; }
+      .history-tools select { flex: 1 1 130px; }
+      .form-row { align-items: stretch; flex-wrap: wrap; }
+      .field { flex-basis: calc(50% - 8px); }
+      .form-row .primary-button { width: 100%; }
+      .panel { padding: 17px; }
+      .history-panel { padding: 0; }
+      th, td { padding-right: 12px; padding-left: 12px; }
+    }
+    @media (max-width: 380px) {
+      .local-label { font-size: 0; }
+      .field { flex-basis: 100%; }
+      .hero-art { flex-basis: 78px; margin-right: -15px; }
+      .hero-orbit { width: 80px; height: 80px; }
+      .hero-orbit::before { inset: 9px; }
+      .hero-orbit::after { inset: 20px; }
+      .hero-check { width: 43px; height: 43px; border-width: 5px; border-radius: 15px; font-size: 20px; }
+      .intro { gap: 5px; padding: 21px 16px; }
+      .intro .subtitle { font-size: 12px; }
+      .history-tools { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✓</span> classmark</div>
+      <div class="local-label"><span class="local-dot" aria-hidden="true"></span> Saved on this device</div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <div class="intro-copy">
+          <p class="eyebrow">Your semester, in focus</p>
+          <h1>Attendance,<br>at a glance.</h1>
+          <p class="subtitle">Keep track of every class and stay on top of your goals.</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <span class="hero-orbit"></span>
+          <span class="hero-check">✓</span>
+          <span class="hero-spark one">✦</span>
+          <span class="hero-spark two">✦</span>
+        </div>
+      </div>
+
+      <section class="overview" aria-label="Overall attendance summary">
+        <div class="stat">
+          <span class="stat-label">Overall attendance</span>
+          <strong class="stat-value" id="overall-percent">—</strong>
+          <span class="stat-hint" id="overall-hint">Add your subjects to get started</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Classes attended</span>
+          <strong class="stat-value" id="classes-attended">0 <small>of 0</small></strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Subjects</span>
+          <strong class="stat-value" id="subject-count">0</strong>
+        </div>
+      </section>
+
+      <section aria-labelledby="subjects-heading">
+        <div class="section-heading">
+          <h2 id="subjects-heading">Your subjects</h2>
+          <span class="section-note" id="target-note">Target: 75%</span>
+        </div>
+        <div class="welcome-card" id="welcome-card">
+          <div class="welcome-copy">
+            <strong>Welcome! Let’s get your tracker ready.</strong>
+            <p>Add your subjects, then log each class as attended or missed. Your progress updates automatically.</p>
+          </div>
+          <button class="quiet-button" id="start-setup" type="button">Add your first subject</button>
+        </div>
+        <div class="subject-grid" id="subject-grid"></div>
+      </section>
+
+      <div class="section-heading">
+        <h2>Manage your tracker</h2>
+        <span class="section-note">Changes save automatically</span>
+      </div>
+      <div class="forms-grid">
+        <section class="panel form-panel record-panel">
+          <h2>Record a class</h2>
+          <form id="attendance-form" class="form-row">
+            <div class="field">
+              <label for="attendance-subject">Subject</label>
+              <select id="attendance-subject" required></select>
+            </div>
+            <div class="field">
+              <label for="class-date">Date</label>
+              <input id="class-date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="class-status">Result</label>
+              <select id="class-status">
+                <option value="attended">Attended</option>
+                <option value="absent">Missed</option>
+              </select>
+            </div>
+            <button class="primary-button" type="submit">Save class</button>
+          </form>
+          <p class="form-help">One entry per subject each day. Saving again updates that day’s result.</p>
+          <p class="toast" id="attendance-message" aria-live="polite"></p>
+        </section>
+
+        <section class="panel form-panel">
+          <h2>Add a subject</h2>
+          <form id="subject-form" class="form-row">
+            <div class="field">
+              <label for="subject-name">Subject name</label>
+              <input id="subject-name" type="text" maxlength="80" placeholder="e.g. Mathematics" required>
+            </div>
+            <button class="primary-button" type="submit">Add subject</button>
+          </form>
+          <p class="toast" id="subject-message" aria-live="polite"></p>
+        </section>
+
+        <section class="panel form-panel">
+          <h2>Attendance target</h2>
+          <form id="target-form" class="form-row">
+            <div class="field">
+              <label for="target-percent">Minimum percentage</label>
+              <input id="target-percent" type="number" min="1" max="100" step="1" required>
+            </div>
+            <button class="primary-button" type="submit">Save target</button>
+          </form>
+          <p class="form-help">Set the minimum attendance required by your college.</p>
+          <p class="toast" id="target-message" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <section aria-labelledby="history-heading">
+        <div class="section-heading">
+          <h2 id="history-heading">Recent classes</h2>
+          <div class="history-tools">
+            <select id="history-filter" aria-label="Filter classes by subject">
+              <option value="all">All subjects</option>
+            </select>
+            <button class="export-button" id="export-csv" type="button">Download CSV</button>
+          </div>
+        </div>
+        <div class="panel history-panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Subject</th><th>Result</th><th aria-label="Actions"></th></tr>
+              </thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <footer>Your attendance data stays in this browser on this device.</footer>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "classmark-attendance-v1";
+      const initialState = { subjects: [], records: [], target: 75 };
+      let state = initialState;
+
+      const byId = (id) => document.getElementById(id);
+      const localDateValue = (date = new Date()) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+      const escapeDate = (value) => {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+          year: "numeric", month: "short", day: "numeric"
+        });
+      };
+
+      function showMessage(id, message, isError = false) {
+        const element = byId(id);
+        element.textContent = message;
+        element.classList.toggle("error", isError);
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          return true;
+        } catch (error) {
+          console.error("Could not save attendance data.", error);
+          showMessage("attendance-message", "Could not save data. Check your browser storage settings.", true);
+          return false;
+        }
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return;
+          const parsed = JSON.parse(saved);
+          if (!parsed || !Array.isArray(parsed.subjects) || !Array.isArray(parsed.records)) {
+            throw new Error("Saved attendance data has an invalid format.");
+          }
+          const target = Number(parsed.target);
+          state = {
+            subjects: parsed.subjects.filter((subject) =>
+              subject && typeof subject.id === "string" && typeof subject.name === "string"
+            ),
+            records: parsed.records.filter((record) =>
+              record && typeof record.subjectId === "string" &&
+              /^\d{4}-\d{2}-\d{2}$/.test(record.date) &&
+              (record.status === "attended" || record.status === "absent")
+            ),
+            target: Number.isInteger(target) && target >= 1 && target <= 100 ? target : 75
+          };
+          const validIds = new Set(state.subjects.map((subject) => subject.id));
+          state.records = state.records.filter((record) => validIds.has(record.subjectId));
+        } catch (error) {
+          console.error("Could not load attendance data.", error);
+          showMessage("attendance-message", "Saved data could not be read. You can continue with a fresh tracker.", true);
+        }
+      }
+
+      function renderSubjects() {
+        const grid = byId("subject-grid");
+        const select = byId("attendance-subject");
+        const historyFilter = byId("history-filter");
+        const selectedFilter = historyFilter.value || "all";
+        grid.replaceChildren();
+        select.replaceChildren();
+        historyFilter.replaceChildren();
+        const allSubjects = document.createElement("option");
+        allSubjects.value = "all";
+        allSubjects.textContent = "All subjects";
+        historyFilter.append(allSubjects);
+        byId("welcome-card").hidden = state.subjects.length > 0;
+
+        if (state.subjects.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Your subjects will appear here once you add one.";
+          grid.append(empty);
+        }
+
+        state.subjects.forEach((subject, index) => {
+          const records = state.records.filter((record) => record.subjectId === subject.id);
+          const attended = records.filter((record) => record.status === "attended").length;
+          const total = records.length;
+          const percent = total ? (100 * attended / total) : 0;
+          const difference = state.target * total - 100 * attended;
+          let guidance;
+          if (total === 0) {
+            guidance = "Record your first class to see how you’re doing.";
+          } else if (difference <= 0) {
+            guidance = `You're at or above your ${state.target}% target.`;
+          } else if (state.target === 100) {
+            guidance = "A perfect record is no longer possible.";
+          } else {
+            const needed = Math.ceil(difference / (100 - state.target));
+            guidance = `Attend the next ${needed} class${needed === 1 ? "" : "es"} to reach your target.`;
+          }
+
+          const card = document.createElement("article");
+          card.className = `subject-card palette-${index % 6}`;
+          const top = document.createElement("div");
+          top.className = "subject-top";
+          const details = document.createElement("div");
+          const name = document.createElement("h3");
+          name.className = "subject-name";
+          name.textContent = subject.name;
+          const count = document.createElement("p");
+          count.className = "subject-count";
+          count.textContent = `${attended} attended · ${total} class${total === 1 ? "" : "es"} recorded`;
+          details.append(name, count);
+          const percentLabel = document.createElement("span");
+          percentLabel.className = `subject-percent${total === 0 ? " unstarted" : ""}`;
+          percentLabel.textContent = total ? `${percent.toFixed(1)}%` : "—";
+          top.append(details, percentLabel);
+
+          const progress = document.createElement("div");
+          progress.className = "progress";
+          progress.setAttribute("role", "progressbar");
+          progress.setAttribute("aria-label", `${subject.name} attendance`);
+          progress.setAttribute("aria-valuenow", percent.toFixed(1));
+          progress.setAttribute("aria-valuemin", "0");
+          progress.setAttribute("aria-valuemax", "100");
+          const fill = document.createElement("div");
+          fill.className = `progress-fill${total > 0 && percent < state.target ? " below-target" : ""}`;
+          fill.style.width = `${percent}%`;
+          progress.append(fill);
+
+          const bottom = document.createElement("div");
+          bottom.className = "subject-bottom";
+          const note = document.createElement("p");
+          note.className = "guidance";
+          note.textContent = guidance;
+          const status = document.createElement("span");
+          status.className = `status-pill ${total === 0 ? "not-started" : percent >= state.target ? "on-track" : "below-target"}`;
+          status.textContent = total === 0 ? "Not started" : percent >= state.target ? "On track" : "Below target";
+          const remove = document.createElement("button");
+          remove.className = "icon-button";
+          remove.type = "button";
+          remove.textContent = "Remove";
+          remove.setAttribute("aria-label", `Remove ${subject.name}`);
+          remove.addEventListener("click", () => removeSubject(subject));
+          const actions = document.createElement("div");
+          actions.className = "history-tools";
+          actions.append(status, remove);
+          bottom.append(note, actions);
+          card.append(top, progress, bottom);
+          grid.append(card);
+
+          const option = document.createElement("option");
+          option.value = subject.id;
+          option.textContent = subject.name;
+          select.append(option);
+
+          const filterOption = document.createElement("option");
+          filterOption.value = subject.id;
+          filterOption.textContent = subject.name;
+          historyFilter.append(filterOption);
+        });
+        historyFilter.value = [...historyFilter.options].some((option) => option.value === selectedFilter)
+          ? selectedFilter
+          : "all";
+
+        if (state.subjects.length === 0) {
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "Add a subject first";
+          select.append(option);
+        }
+        byId("attendance-form").querySelector("button").disabled = state.subjects.length === 0;
+      }
+
+      function renderHistory() {
+        const body = byId("history-body");
+        body.replaceChildren();
+        const subjectNames = new Map(state.subjects.map((subject) => [subject.id, subject.name]));
+        const selectedSubject = byId("history-filter").value;
+        const records = state.records
+          .filter((record) => subjectNames.has(record.subjectId) &&
+            (selectedSubject === "all" || record.subjectId === selectedSubject))
+          .sort((a, b) => b.date.localeCompare(a.date));
+        byId("export-csv").disabled = state.records.length === 0;
+
+        if (records.length === 0) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.className = "table-empty";
+          cell.colSpan = 4;
+          cell.textContent = state.records.length === 0
+            ? "Your recorded classes will show up here."
+            : "No classes found for this subject.";
+          row.append(cell);
+          body.append(row);
+          return;
+        }
+
+        for (const record of records) {
+          const row = document.createElement("tr");
+          const dateCell = document.createElement("td");
+          dateCell.textContent = escapeDate(record.date);
+          const subjectCell = document.createElement("td");
+          subjectCell.textContent = subjectNames.get(record.subjectId);
+          const resultCell = document.createElement("td");
+          const result = document.createElement("span");
+          result.className = `result${record.status === "absent" ? " absent" : ""}`;
+          result.textContent = record.status === "attended" ? "Attended" : "Missed";
+          resultCell.append(result);
+          const actionCell = document.createElement("td");
+          const remove = document.createElement("button");
+          remove.className = "delete-record";
+          remove.type = "button";
+          remove.textContent = "×";
+          remove.setAttribute("aria-label", `Delete ${subjectNames.get(record.subjectId)} record for ${record.date}`);
+          remove.addEventListener("click", () => {
+            if (!window.confirm(`Delete the ${record.status === "attended" ? "attended" : "missed"} class for ${subjectNames.get(record.subjectId)} on ${escapeDate(record.date)}?`)) return;
+            state.records = state.records.filter((item) =>
+              !(item.subjectId === record.subjectId && item.date === record.date)
+            );
+            if (saveState()) {
+              render();
+              showMessage("attendance-message", "Attendance record deleted.");
+            }
+          });
+          actionCell.append(remove);
+          row.append(dateCell, subjectCell, resultCell, actionCell);
+          body.append(row);
+        }
+      }
+
+      function render() {
+        renderSubjects();
+        renderHistory();
+        const attended = state.records.filter((record) => record.status === "attended").length;
+        const total = state.records.length;
+        const percent = total ? (100 * attended / total) : 0;
+        byId("overall-percent").textContent = total ? `${percent.toFixed(1)}%` : "—";
+        byId("overall-hint").textContent = total
+          ? percent >= state.target
+            ? `You’re on track for your ${state.target}% target`
+            : `Below your ${state.target}% target`
+          : "Log your first class to see your progress";
+        byId("classes-attended").replaceChildren();
+        byId("classes-attended").append(document.createTextNode(`${attended} `));
+        const totalLabel = document.createElement("small");
+        totalLabel.textContent = `of ${total}`;
+        byId("classes-attended").append(totalLabel);
+        byId("subject-count").textContent = String(state.subjects.length);
+        byId("target-note").textContent = `Target: ${state.target}%`;
+        byId("target-percent").value = String(state.target);
+      }
+
+      function removeSubject(subject) {
+        if (!window.confirm(`Remove "${subject.name}" and all its attendance records?`)) return;
+        state.subjects = state.subjects.filter((item) => item.id !== subject.id);
+        state.records = state.records.filter((record) => record.subjectId !== subject.id);
+        if (saveState()) render();
+      }
+
+      byId("subject-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const input = byId("subject-name");
+        const name = input.value.trim();
+        if (!name) {
+          showMessage("subject-message", "Enter a subject name.", true);
+          return;
+        }
+        if (state.subjects.some((subject) => subject.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+          showMessage("subject-message", "That subject is already on your list.", true);
+          return;
+        }
+        const subject = { id: crypto.randomUUID(), name };
+        state.subjects.push(subject);
+        if (saveState()) {
+          render();
+          byId("attendance-subject").value = subject.id;
+          input.value = "";
+          showMessage("subject-message", `${name} added.`);
+          byId("attendance-subject").focus();
+        }
+      });
+
+      byId("attendance-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const subjectId = byId("attendance-subject").value;
+        const date = byId("class-date").value;
+        const status = byId("class-status").value;
+        if (!subjectId || !date) {
+          showMessage("attendance-message", "Choose a subject and date.", true);
+          return;
+        }
+        if (date > localDateValue()) {
+          showMessage("attendance-message", "Choose today or an earlier date. Future classes can’t be recorded yet.", true);
+          byId("class-date").focus();
+          return;
+        }
+        const existing = state.records.find((record) =>
+          record.subjectId === subjectId && record.date === date
+        );
+        if (existing) existing.status = status;
+        else state.records.push({ subjectId, date, status });
+        if (saveState()) {
+          render();
+          showMessage("attendance-message", existing
+            ? "That date's attendance was updated."
+            : "Class attendance saved.");
+        }
+      });
+
+      byId("target-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const target = Number(byId("target-percent").value);
+        if (!Number.isInteger(target) || target < 1 || target > 100) {
+          showMessage("target-message", "Enter a whole number between 1 and 100.", true);
+          return;
+        }
+        state.target = target;
+        if (saveState()) {
+          render();
+          showMessage("target-message", `Your target is now ${target}%.`);
+        }
+      });
+
+      byId("history-filter").addEventListener("change", renderHistory);
+
+      byId("export-csv").addEventListener("click", () => {
+        const subjects = new Map(state.subjects.map((subject) => [subject.id, subject.name]));
+        const quote = (value) => {
+          const text = String(value);
+          const safeText = /^[\t\r=+\-@]/.test(text) ? `'${text}` : text;
+          return `"${safeText.replaceAll('"', '""')}"`;
+        };
+        const rows = [["Date", "Subject", "Result"]];
+        for (const record of [...state.records].sort((a, b) => a.date.localeCompare(b.date))) {
+          rows.push([record.date, subjects.get(record.subjectId) || "Unknown subject",
+            record.status === "attended" ? "Attended" : "Missed"]);
+        }
+        const csv = rows.map((row) => row.map(quote).join(",")).join("\r\n");
+        const file = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `classmark-attendance-${localDateValue()}.csv`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showMessage("attendance-message", "Your attendance history was downloaded.");
+      });
+
+      byId("start-setup").addEventListener("click", () => {
+        byId("subject-name").focus();
+        byId("subject-name").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      byId("class-date").value = localDateValue();
+      byId("class-date").max = localDateValue();
+      loadState();
+      render();
+    })();
+  </script>
+</body>
+</html>
